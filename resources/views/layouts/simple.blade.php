@@ -106,7 +106,7 @@
                         <!-- Logo -->
                         <a class="custom link-fx font-w600 font-size-lg logo-hover" href="home">
                             <div class="block-content block-content-full d-flex align-items-center justify-content-between">
-                                BENSINKU
+                                <span style="color: #ffffff; !important;">BENSINKU</span>
                                 <!-- <img class="img-logo" src="{{ asset('/media/logo.png')}}" alt="Imigrasi"> -->
                             </div>
                         </a>
@@ -147,31 +147,75 @@
                             </a>
                         </li>
                     </ul>
+
+                    <li class="nav-main-item {{ Request::segment(1) == 'customer-database' || Request::segment(1) == 'promo' ? 'open' : ''}}">
+                        <a class="nav-main-link nav-main-link-submenu {{ Request::segment(1) == 'customer-database' || Request::segment(1) == 'promo' ? 'active' : ''}}" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
+                            <span class="nav-main-link-name">CRM Manager</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="">
+                                    <span class="nav-main-link-name">Customer Database</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="promo">
+                                    <span class="nav-main-link-name">Promo</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="">
+                                    <span class="nav-main-link-name">Product Settings</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="">
+                                    <span class="nav-main-link-name">Referral Info</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-main-item {{ Request::segment(1) == 'order-manager' || Request::segment(1) == 'order-review' ? 'open' : ''}}">
+                        <a class="nav-main-link nav-main-link-submenu {{ Request::segment(1) == 'order-manager' || Request::segment(1) == 'order-review' ? 'active' : ''}}" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
+                            <span class="nav-main-link-name">Order Management</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="order-manager">
+                                    <span class="nav-main-link-name">Order Manager</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="promo">
+                                    <span class="nav-main-link-name">Order Review</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
+                    <li class="nav-main-item {{ Request::segment(1) == 'cms-user-manager' || Request::segment(1) == 'driver-manager' ? 'open' : ''}}">
+                        <a class="nav-main-link nav-main-link-submenu {{ Request::segment(1) == 'cms-user-manager' || Request::segment(1) == 'driver-manager' ? 'active' : ''}}" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
+                            <span class="nav-main-link-name">User Accessibility</span>
+                        </a>
+                        <ul class="nav-main-submenu">
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="cms-user-manager">
+                                    <span class="nav-main-link-name">CMS User Manager</span>
+                                </a>
+                            </li>
+                            <li class="nav-main-item">
+                                <a class="nav-main-link" href="driver-manager">
+                                    <span class="nav-main-link-name">Driver Manager</span>
+                                </a>
+                            </li>
+                        </ul>
+                    </li>
+
                     <ul class="nav-main">
                         <li class="nav-main-item">
-                            <a class="nav-main-link {{Request::segment(1) == 'manage-customer' ? 'active' : ''}}" href="/manage-customer">
-                                <span class="nav-main-link-name">Manage Customer</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="nav-main">
-                        <li class="nav-main-item">
-                            <a class="nav-main-link {{Request::segment(1) == 'manage-paspor' ? 'active' : ''}}" href="/manage-paspor">
-                                <span class="nav-main-link-name">Manage Paspor</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="nav-main">
-                        <li class="nav-main-item">
-                            <a class="nav-main-link {{Request::segment(1) == 'user-management' ? 'active' : ''}}" href="/user-management">
-                                <span class="nav-main-link-name">Change Password</span>
-                            </a>
-                        </li>
-                    </ul>
-                    <ul class="nav-main">
-                        <li class="nav-main-item">
-                            <a class="nav-main-link {{Request::segment(1) == 'logout' ? 'active' : ''}}" href="logout">
-                                <span class="nav-main-link-name">Logout</span>
+                            <a class="nav-main-link {{Request::segment(1) == 'reporting' ? 'active' : ''}}" href="/reporting">
+                                <span class="nav-main-link-name">Reporting</span>
                             </a>
                         </li>
                     </ul>
@@ -205,7 +249,7 @@
                                 <i class="far fa-fw fa-user-circle"></i>
                                 <!-- <i class="fa fa-fw fa-angle-down ml-1 d-none d-sm-inline-block"></i> -->
                             </button>
-                            <!-- <div class="dropdown-menu dropdown-menu-right p-0" aria-labelledby="page-header-user-dropdown">
+                            <div class="dropdown-menu dropdown-menu-right p-0" aria-labelledby="page-header-user-dropdown">
                                 <div class="bg-primary-darker rounded-top font-w600 text-white text-center p-3">
                                     <img class="img-avatar img-avatar48 img-avatar-thumb" src="{{ asset('media/avatars/avatar10.jpg') }}" alt="">
                                     <div class="pt-2">
@@ -218,7 +262,7 @@
                                         <i class="fa fa-fw fa-arrow-alt-circle-left mr-1"></i> Log Out
                                     </a>
                                 </div>
-                            </div> -->
+                            </div>
                         </div>
                         <!-- END User Dropdown -->
                     </div>

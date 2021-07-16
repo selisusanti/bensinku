@@ -29,3 +29,16 @@ Route::prefix( 'home' )->group(function() {
     Route::get ( '', 'HomeController@viewHome');
     Route::post ( '/data', 'HomeController@getData');
 });
+
+Route::prefix( 'promo' )->group(function() {
+    Route::get('', function () {
+        return view('dashboard');
+    });
+});
+
+
+Route::prefix( 'order-manager' )->group(function() {
+    Route::get('', function () {
+        return view('dashboard');
+    });
+});
