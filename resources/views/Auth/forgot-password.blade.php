@@ -65,7 +65,7 @@
                                         <a class="link-fx text-warning font-w700 font-size-h1" href="index.html">
                                             <span class="text-dark">BENSINKU</span><span class="text-primary"></span>
                                         </a>
-                                        <p class="text-uppercase font-w700 font-size-sm text-muted">Forgot Password</p>
+                                        <p class="text-uppercase font-w700 font-size-sm text-muted">Masukan Email Yang Digunakan</p>
                                     </div>
                                     <!-- END Header -->
 
