@@ -1,6 +1,6 @@
 //I will make sure this code run on Script Load
 $(document).ready(function(){
-    $('.armos-custom-number-only-input').keypress(function(evt){
+    $('.paspor-custom-number-only-input').keypress(function(evt){
         if (evt.which < 48 || evt.which > 57){
             evt.preventDefault();
         }

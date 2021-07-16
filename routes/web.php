@@ -42,3 +42,17 @@ Route::prefix( 'order-manager' )->group(function() {
         return view('dashboard');
     });
 });
+
+Route::get('forgot-password', function () {
+    return view('Auth.forgot-password');
+});
+
+
+// Authentication
+Route::prefix('auth')->group(function(){
+    Route::post('/send-email', 'AuthController@sendEmail');
+    Route::put ( '/reset-password', 'AuthController@updatePassword' );
+});
+
+
+Route::get('change-password/{id}', 'AuthController@find' );

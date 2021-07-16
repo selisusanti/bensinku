@@ -113,6 +113,7 @@ var buildURL = __webpack_require__(/*! ./../helpers/buildURL */ "./node_modules/
 var parseHeaders = __webpack_require__(/*! ./../helpers/parseHeaders */ "./node_modules/axios/lib/helpers/parseHeaders.js");
 var isURLSameOrigin = __webpack_require__(/*! ./../helpers/isURLSameOrigin */ "./node_modules/axios/lib/helpers/isURLSameOrigin.js");
 var createError = __webpack_require__(/*! ../core/createError */ "./node_modules/axios/lib/core/createError.js");
+var btoa = (typeof window !== 'undefined' && window.btoa && window.btoa.bind(window)) || __webpack_require__(/*! ./../helpers/btoa */ "./node_modules/axios/lib/helpers/btoa.js");
 
 module.exports = function xhrAdapter(config) {
   return new Promise(function dispatchXhrRequest(resolve, reject) {
@@ -124,6 +125,22 @@ module.exports = function xhrAdapter(config) {
     }
 
     var request = new XMLHttpRequest();
+    var loadEvent = 'onreadystatechange';
+    var xDomain = false;
+
+    // For IE 8/9 CORS support
+    // Only supports POST and GET calls and doesn't returns the response headers.
+    // DON'T do this for testing b/c XMLHttpRequest is mocked, not XDomainRequest.
+    if ( true &&
+        typeof window !== 'undefined' &&
+        window.XDomainRequest && !('withCredentials' in request) &&
+        !isURLSameOrigin(config.url)) {
+      request = new window.XDomainRequest();
+      loadEvent = 'onload';
+      xDomain = true;
+      request.onprogress = function handleProgress() {};
+      request.ontimeout = function handleTimeout() {};
+    }
 
     // HTTP basic authentication
     if (config.auth) {
@@ -138,8 +155,8 @@ module.exports = function xhrAdapter(config) {
     request.timeout = config.timeout;
 
     // Listen for ready state
-    request.onreadystatechange = function handleLoad() {
-      if (!request || request.readyState !== 4) {
+    request[loadEvent] = function handleLoad() {
+      if (!request || (request.readyState !== 4 && !xDomain)) {
         return;
       }
 
@@ -156,8 +173,9 @@ module.exports = function xhrAdapter(config) {
       var responseData = !config.responseType || config.responseType === 'text' ? request.responseText : request.response;
       var response = {
         data: responseData,
-        status: request.status,
-        statusText: request.statusText,
+        // IE sends 1223 instead of 204 (https://github.com/axios/axios/issues/201)
+        status: request.status === 1223 ? 204 : request.status,
+        statusText: request.status === 1223 ? 'No Content' : request.statusText,
         headers: responseHeaders,
         config: config,
         request: request
@@ -970,6 +988,54 @@ module.exports = function bind(fn, thisArg) {
 
 /***/ }),
 
+/***/ "./node_modules/axios/lib/helpers/btoa.js":
+/*!************************************************!*\
+  !*** ./node_modules/axios/lib/helpers/btoa.js ***!
+  \************************************************/
+/*! no static exports found */
+/***/ (function(module, exports, __webpack_require__) {
+
+"use strict";
+
+
+// btoa polyfill for IE<10 courtesy https://github.com/davidchambers/Base64.js
+
+var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=';
+
+function E() {
+  this.message = 'String contains an invalid character';
+}
+E.prototype = new Error;
+E.prototype.code = 5;
+E.prototype.name = 'InvalidCharacterError';
+
+function btoa(input) {
+  var str = String(input);
+  var output = '';
+  for (
+    // initialize result and counter
+    var block, charCode, idx = 0, map = chars;
+    // if the next str index does not exist:
+    //   change the mapping table to "="
+    //   check if d has no fractional digits
+    str.charAt(idx | 0) || (map = '=', idx % 1);
+    // "8 - idx % 1 * 8" generates the sequence 2, 4, 6, 8
+    output += map.charAt(63 & block >> 8 - idx % 1 * 8)
+  ) {
+    charCode = str.charCodeAt(idx += 3 / 4);
+    if (charCode > 0xFF) {
+      throw new E();
+    }
+    block = block << 8 | charCode;
+  }
+  return output;
+}
+
+module.exports = btoa;
+
+
+/***/ }),
+
 /***/ "./node_modules/axios/lib/helpers/buildURL.js":
 /*!****************************************************!*\
   !*** ./node_modules/axios/lib/helpers/buildURL.js ***!
@@ -1384,7 +1450,7 @@ module.exports = function spread(callback) {
 
 
 var bind = __webpack_require__(/*! ./helpers/bind */ "./node_modules/axios/lib/helpers/bind.js");
-var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/axios/node_modules/is-buffer/index.js");
+var isBuffer = __webpack_require__(/*! is-buffer */ "./node_modules/is-buffer/index.js");
 
 /*global toString:true*/
 
@@ -1688,10 +1754,10 @@ module.exports = {
 
 /***/ }),
 
-/***/ "./node_modules/axios/node_modules/is-buffer/index.js":
-/*!************************************************************!*\
-  !*** ./node_modules/axios/node_modules/is-buffer/index.js ***!
-  \************************************************************/
+/***/ "./node_modules/is-buffer/index.js":
+/*!*****************************************!*\
+  !*** ./node_modules/is-buffer/index.js ***!
+  \*****************************************/
 /*! no static exports found */
 /***/ (function(module, exports) {
 
@@ -1702,9 +1768,19 @@ module.exports = {
  * @license  MIT
  */
 
-module.exports = function isBuffer (obj) {
-  return obj != null && obj.constructor != null &&
-    typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+// The _isBuffer check is for Safari 5-7 support, because it's missing
+// Object.prototype.constructor. Remove this eventually
+module.exports = function (obj) {
+  return obj != null && (isBuffer(obj) || isSlowBuffer(obj) || !!obj._isBuffer)
+}
+
+function isBuffer (obj) {
+  return !!obj.constructor && typeof obj.constructor.isBuffer === 'function' && obj.constructor.isBuffer(obj)
+}
+
+// For Node v0.10 support. Remove this eventually.
+function isSlowBuffer (obj) {
+  return typeof obj.readFloatLE === 'function' && typeof obj.slice === 'function' && isBuffer(obj.slice(0, 0))
 }
 
 
@@ -1720,7 +1796,7 @@ module.exports = function isBuffer (obj) {
 /* WEBPACK VAR INJECTION */(function(global, module) {var __WEBPACK_AMD_DEFINE_RESULT__;/**
  * @license
  * Lodash <https://lodash.com/>
- * Copyright OpenJS Foundation and other contributors <https://openjsf.org/>
+ * Copyright JS Foundation and other contributors <https://js.foundation/>
  * Released under MIT license <https://lodash.com/license>
  * Based on Underscore.js 1.8.3 <http://underscorejs.org/LICENSE>
  * Copyright Jeremy Ashkenas, DocumentCloud and Investigative Reporters & Editors
@@ -1731,7 +1807,7 @@ module.exports = function isBuffer (obj) {
   var undefined;
 
   /** Used as the semantic version number. */
-  var VERSION = '4.17.15';
+  var VERSION = '4.17.11';
 
   /** Used as the size to enable large array optimizations. */
   var LARGE_ARRAY_SIZE = 200;
@@ -4390,10 +4466,16 @@ module.exports = function isBuffer (obj) {
         value.forEach(function(subValue) {
           result.add(baseClone(subValue, bitmask, customizer, subValue, value, stack));
         });
-      } else if (isMap(value)) {
+
+        return result;
+      }
+
+      if (isMap(value)) {
         value.forEach(function(subValue, key) {
           result.set(key, baseClone(subValue, bitmask, customizer, key, value, stack));
         });
+
+        return result;
       }
 
       var keysFunc = isFull
@@ -5317,8 +5399,8 @@ module.exports = function isBuffer (obj) {
         return;
       }
       baseFor(source, function(srcValue, key) {
-        stack || (stack = new Stack);
         if (isObject(srcValue)) {
+          stack || (stack = new Stack);
           baseMergeDeep(object, source, key, srcIndex, baseMerge, customizer, stack);
         }
         else {
@@ -7135,7 +7217,7 @@ module.exports = function isBuffer (obj) {
       return function(number, precision) {
         number = toNumber(number);
         precision = precision == null ? 0 : nativeMin(toInteger(precision), 292);
-        if (precision && nativeIsFinite(number)) {
+        if (precision) {
           // Shift with exponential notation to avoid floating-point issues.
           // See [MDN](https://mdn.io/round#Examples) for more details.
           var pair = (toString(number) + 'e').split('e'),
@@ -8318,7 +8400,7 @@ module.exports = function isBuffer (obj) {
     }
 
     /**
-     * Gets the value at `key`, unless `key` is "__proto__" or "constructor".
+     * Gets the value at `key`, unless `key` is "__proto__".
      *
      * @private
      * @param {Object} object The object to query.
@@ -8326,10 +8408,6 @@ module.exports = function isBuffer (obj) {
      * @returns {*} Returns the property value.
      */
     function safeGet(object, key) {
-      if (key === 'constructor' && typeof object[key] === 'function') {
-        return;
-      }
-
       if (key == '__proto__') {
         return;
       }
@@ -12130,7 +12208,6 @@ module.exports = function isBuffer (obj) {
           }
           if (maxing) {
             // Handle invocations in a tight loop.
-            clearTimeout(timerId);
             timerId = setTimeout(timerExpired, wait);
             return invokeFunc(lastCallTime);
           }
@@ -16517,12 +16594,9 @@ module.exports = function isBuffer (obj) {
       , 'g');
 
       // Use a sourceURL for easier debugging.
-      // The sourceURL gets injected into the source that's eval-ed, so be careful
-      // with lookup (in case of e.g. prototype pollution), and strip newlines if any.
-      // A newline wouldn't be a valid sourceURL anyway, and it'd enable code injection.
       var sourceURL = '//# sourceURL=' +
-        (hasOwnProperty.call(options, 'sourceURL')
-          ? (options.sourceURL + '').replace(/[\r\n]/g, ' ')
+        ('sourceURL' in options
+          ? options.sourceURL
           : ('lodash.templateSources[' + (++templateCounter) + ']')
         ) + '\n';
 
@@ -16555,9 +16629,7 @@ module.exports = function isBuffer (obj) {
 
       // If `variable` is not specified wrap a with-statement around the generated
       // code to add the data object to the top of the scope chain.
-      // Like with sourceURL, we take care to not check the option's prototype,
-      // as this configuration is a code injection vector.
-      var variable = hasOwnProperty.call(options, 'variable') && options.variable;
+      var variable = options.variable;
       if (!variable) {
         source = 'with (obj) {\n' + source + '\n}\n';
       }
@@ -18762,11 +18834,10 @@ module.exports = function isBuffer (obj) {
     baseForOwn(LazyWrapper.prototype, function(func, methodName) {
       var lodashFunc = lodash[methodName];
       if (lodashFunc) {
-        var key = lodashFunc.name + '';
-        if (!hasOwnProperty.call(realNames, key)) {
-          realNames[key] = [];
-        }
-        realNames[key].push({ 'name': methodName, 'func': lodashFunc });
+        var key = (lodashFunc.name + ''),
+            names = realNames[key] || (realNames[key] = []);
+
+        names.push({ 'name': methodName, 'func': lodashFunc });
       }
     });
 
@@ -23973,47 +24044,47 @@ function initProps (vm, propsOptions) {
   toggleObserving(true);
 }
 
-function initData (vm) {
-  var data = vm.$options.data;
-  data = vm._data = typeof data === 'function'
-    ? getData(data, vm)
-    : data || {};
-  if (!isPlainObject(data)) {
-    data = {};
-    warn(
-      'data functions should return an object:\n' +
-      'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function',
-      vm
-    );
-  }
-  // proxy data on instance
-  var keys = Object.keys(data);
-  var props = vm.$options.props;
-  var methods = vm.$options.methods;
-  var i = keys.length;
-  while (i--) {
-    var key = keys[i];
-    {
-      if (methods && hasOwn(methods, key)) {
-        warn(
-          ("Method \"" + key + "\" has already been defined as a data property."),
-          vm
-        );
-      }
-    }
-    if (props && hasOwn(props, key)) {
-      warn(
-        "The data property \"" + key + "\" is already declared as a prop. " +
-        "Use prop default value instead.",
-        vm
-      );
-    } else if (!isReserved(key)) {
-      proxy(vm, "_data", key);
-    }
-  }
-  // observe data
-  observe(data, true /* asRootData */);
-}
+// function initData (vm) {
+//   var data = vm.$options.data;
+//   data = vm._data = typeof data === 'function'
+//     ? getData(data, vm)
+//     : data || {};
+//   if (!isPlainObject(data)) {
+//     data = {};
+//     warn(
+//       'data functions should return an object:\n' +
+//       'https://vuejs.org/v2/guide/components.html#data-Must-Be-a-Function',
+//       vm
+//     );
+//   }
+//   // proxy data on instance
+//   var keys = Object.keys(data);
+//   var props = vm.$options.props;
+//   var methods = vm.$options.methods;
+//   var i = keys.length;
+//   while (i--) {
+//     var key = keys[i];
+//     {
+//       if (methods && hasOwn(methods, key)) {
+//         warn(
+//           ("Method \"" + key + "\" has already been defined as a data property."),
+//           vm
+//         );
+//       }
+//     }
+//     if (props && hasOwn(props, key)) {
+//       warn(
+//         "The data property \"" + key + "\" is already declared as a prop. " +
+//         "Use prop default value instead.",
+//         vm
+//       );
+//     } else if (!isReserved(key)) {
+//       proxy(vm, "_data", key);
+//     }
+//   }
+//   // observe data
+//   observe(data, true /* asRootData */);
+// }
 
 function getData (data, vm) {
   // #7573 disable dep collection when invoking data getters
@@ -28322,29 +28393,29 @@ Vue.prototype.$mount = function (
 
 // devtools global hook
 /* istanbul ignore next */
-if (inBrowser) {
-  setTimeout(function () {
-    if (config.devtools) {
-      if (devtools) {
-        devtools.emit('init', Vue);
-      } else {
-        console[console.info ? 'info' : 'log'](
-          'Download the Vue Devtools extension for a better development experience:\n' +
-          'https://github.com/vuejs/vue-devtools'
-        );
-      }
-    }
-    if (config.productionTip !== false &&
-      typeof console !== 'undefined'
-    ) {
-      console[console.info ? 'info' : 'log'](
-        "You are running Vue in development mode.\n" +
-        "Make sure to turn on production mode when deploying for production.\n" +
-        "See more tips at https://vuejs.org/guide/deployment.html"
-      );
-    }
-  }, 0);
-}
+// if (inBrowser) {
+//   setTimeout(function () {
+//     if (config.devtools) {
+//       if (devtools) {
+//         devtools.emit('init', Vue);
+//       } else {
+//         console[console.info ? 'info' : 'log'](
+//           'Download the Vue Devtools extension for a better development experience:\n' +
+//           'https://github.com/vuejs/vue-devtools'
+//         );
+//       }
+//     }
+//     if (config.productionTip !== false &&
+//       typeof console !== 'undefined'
+//     ) {
+//       console[console.info ? 'info' : 'log'](
+//         "You are running Vue in development mode.\n" +
+//         "Make sure to turn on production mode when deploying for production.\n" +
+//         "See more tips at https://vuejs.org/guide/deployment.html"
+//       );
+//     }
+//   }, 0);
+// }
 
 /*  */
 
@@ -31512,16 +31583,16 @@ if (token) {
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/js/laravel/app.js */"./resources/assets/js/laravel/app.js");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/main.scss */"./resources/assets/sass/main.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xeco.scss */"./resources/assets/sass/dashmix/themes/xeco.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xinspire.scss */"./resources/assets/sass/dashmix/themes/xinspire.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xmodern.scss */"./resources/assets/sass/dashmix/themes/xmodern.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xsmooth.scss */"./resources/assets/sass/dashmix/themes/xsmooth.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xwork.scss */"./resources/assets/sass/dashmix/themes/xwork.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xdream.scss */"./resources/assets/sass/dashmix/themes/xdream.scss");
-__webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xpro.scss */"./resources/assets/sass/dashmix/themes/xpro.scss");
-module.exports = __webpack_require__(/*! /Users/yosuakristianto_144/Documents/Larapel Armos/armos-cloud/resources/assets/sass/dashmix/themes/xplay.scss */"./resources/assets/sass/dashmix/themes/xplay.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/js/laravel/app.js */"./resources/assets/js/laravel/app.js");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/main.scss */"./resources/assets/sass/main.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xeco.scss */"./resources/assets/sass/dashmix/themes/xeco.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xinspire.scss */"./resources/assets/sass/dashmix/themes/xinspire.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xmodern.scss */"./resources/assets/sass/dashmix/themes/xmodern.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xsmooth.scss */"./resources/assets/sass/dashmix/themes/xsmooth.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xwork.scss */"./resources/assets/sass/dashmix/themes/xwork.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xdream.scss */"./resources/assets/sass/dashmix/themes/xdream.scss");
+__webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xpro.scss */"./resources/assets/sass/dashmix/themes/xpro.scss");
+module.exports = __webpack_require__(/*! /Users/johnchampsas/Desktop/Projects/Dashmix - Laravel Starter Kit/resources/assets/sass/dashmix/themes/xplay.scss */"./resources/assets/sass/dashmix/themes/xplay.scss");
 
 
 /***/ })

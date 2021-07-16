@@ -3,10 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Users;
+use App\PasswordReset;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Session;
 use Illuminate\Support\Facades\Redirect;
+use Illuminate\Support\Str;
+use DB;
 
 
 class AuthController extends Controller
@@ -59,5 +62,77 @@ class AuthController extends Controller
         Session::regenerate(true);
         return redirect('/');
     }
+
+
+
+    /**
+     * function untuk kirim email saat forgot password
+     *
+    */
+    public function sendEmail(Request $request){
+        $Users = Users::where('email', '=', $request->email)->first();
+
+        if(!isset($Users)){
+            Session::flash('error', "Email Failed!");
+            return redirect('/forgot-password');
+        }
+
+        $passwordReset = PasswordReset::updateOrCreate(
+            ['email' => $Users->email],
+            [
+                'email' => $Users->email,
+                'token' => Str::random(60)
+             ]
+        );
+
+        \Mail::to($Users->email)->send(new \App\Mail\SendMail($passwordReset->email,$passwordReset->token));
+        
+        Session::flash('success', "Success Send Email");
+        return redirect('/forgot-password');
+    }
+    /**
+     * function untuk kirim email saat forgot password
+     *
+    */
+    public function find($token){
+        $passwordReset = PasswordReset::where('token', $token)
+                         ->first();
+
+        if (empty($passwordReset)){
+            Session::flash('error', "Token Sudah Tidak Bisa Dipakai");
+            return redirect("login");
+        }
+
+        $response = Users::where('email',$passwordReset->email)->first()->toJson();
+
+        return view('Auth.reset-password')
+                ->with('detail', json_decode($response, false));
+
+    }
+
+
+    public function updatePassword(Request $request) {
+        
+        try {
+
+            DB::beginTransaction();
+
+            $response = Users::where('email',$request->email)->first();
+            $response->update([
+                'password' => Hash::make($request->password),
+            ]);
+
+            $resp        = PasswordReset::where('email',$request->email)->delete();
+
+            DB::commit();
+            Session::flash('success', "Update Berhasil!");
+            return redirect('/');
+        } catch (\Throwable $th) {
+            DB::rollBack();
+            Session::flash('error', "Update Gagal!");
+            return redirect('/');
+        }
+    }
+
 
 }

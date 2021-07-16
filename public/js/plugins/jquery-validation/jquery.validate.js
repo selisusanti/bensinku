@@ -464,22 +464,9 @@ $.extend( $.validator, {
 
 		checkForm: function() {
 			this.prepareForm();
-			// Lama
-			// for ( var i = 0, elements = ( this.currentElements = this.elements() ); elements[ i ]; i++ ) {
-			// 	this.check( elements[ i ] );
-			// }
-
-			// Penambahan
-			for (var i = 0, elements = (this.currentElements = this.elements()); elements[i]; i++) {
-				if (this.findByName(elements[i].name).length != undefined && this.findByName(elements[i].name).length > 1) {
-					for (var cnt = 0; cnt < this.findByName(elements[i].name).length; cnt++) {
-						this.check(this.findByName(elements[i].name)[cnt]);
-					}
-				} else {
-					this.check(elements[i]);
-				}
+			for ( var i = 0, elements = ( this.currentElements = this.elements() ); elements[ i ]; i++ ) {
+				this.check( elements[ i ] );
 			}
-			
 			return this.valid();
 		},
 
@@ -1619,13 +1606,9 @@ $.extend( $.validator, {
 				}
 			}, param ) );
 			return "pending";
-		},
-
-		// Custom for regex
-		regexCustom: function(value, element, regexpr) {
-			return regexpr.test(value);
 		}
 	}
+
 } );
 
 // Ajax mode: abort

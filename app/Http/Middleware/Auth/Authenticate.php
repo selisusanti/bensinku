@@ -19,6 +19,10 @@ class Authenticate
         $exception = [
             "/",
             "login",
+            "forgot-password",
+            "change-password/{id}",
+            "auth/send-email",
+            "auth/reset-password",
         ];
 
         if ( !in_array($request->route()->uri, $exception) && empty(Session::get('user'))) {

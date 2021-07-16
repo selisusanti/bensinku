@@ -54,7 +54,7 @@
             <main id="main-container">
 
                 <!-- Page Content -->
-                <div class="bg-image" style="background-image: url('assets/media/photos/photo16@2x.jpg');">
+                <div class="bg-image" style="background-image: {{ ('media/photos/photo16@2x.jpg') }};">
                     <div class="row no-gutters justify-content-center bg-black-75">
                         <div class="hero-static col-sm-8 col-md-6 col-xl-4 d-flex align-items-center p-2 px-sm-0">
                             <!-- Reminder Block -->
@@ -79,6 +79,11 @@
                                         </div>
                                         <div class="form-group">
                                             <input type="password" class="form-control" name="password" placeholder="Password">
+                                        </div>
+                                        <div class="form-group">       
+                                            <a href="forgot-password">
+                                                <p class="text-uppercase text-center font-w700 font-size-sm text-muted">Lupa Password ?</p>
+                                            </a>
                                         </div>
                                         <div class="form-group">
                                             <button type="submit" class="btn btn-hero-primary btn-block">Login</button>
