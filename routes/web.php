@@ -31,9 +31,13 @@ Route::prefix( 'home' )->group(function() {
 });
 
 Route::prefix( 'promo' )->group(function() {
-    Route::get('', function () {
-        return view('dashboard');
-    });
+    Route::get('', 'PromoController@index');
+    Route::post('getData', 'PromoController@getData');
+    Route::get('add-promo', 'PromoController@formAddPromo');
+    Route::get('edit-promo/{id}', 'PromoController@formEditPromo');
+    Route::post('', 'PromoController@savePromo');
+    Route::put('', 'PromoController@editPromo');
+    Route::get ('delete-promo/{id}', 'PromoController@deletePromo');
 });
 
 
@@ -56,3 +60,10 @@ Route::prefix('auth')->group(function(){
 
 
 Route::get('change-password/{id}', 'AuthController@find' );
+
+
+// Authentication
+Route::prefix('product-settings')->group(function(){
+    Route::get('', 'ProductSettingsController@index');
+    Route::post('getData', 'ProductSettingsController@getData');
+});

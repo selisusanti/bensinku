@@ -148,7 +148,7 @@
                         </li>
                     </ul>
 
-                    <li class="nav-main-item {{ Request::segment(1) == 'customer-database' || Request::segment(1) == 'promo' ? 'open' : ''}}">
+                    <li class="nav-main-item {{ Request::segment(1) == 'product-settings' || Request::segment(1) == 'promo' ? 'open' : ''}} || Request::segment(1) == 'promo' ? 'open' : ''}} || Request::segment(1) == 'promo' ? 'open' : ''}}">
                         <a class="nav-main-link nav-main-link-submenu {{ Request::segment(1) == 'customer-database' || Request::segment(1) == 'promo' ? 'active' : ''}}" data-toggle="submenu" aria-haspopup="true" aria-expanded="false" href="#">
                             <span class="nav-main-link-name">CRM Manager</span>
                         </a>
@@ -164,7 +164,7 @@
                                 </a>
                             </li>
                             <li class="nav-main-item">
-                                <a class="nav-main-link" href="">
+                                <a class="nav-main-link" href="product-settings">
                                     <span class="nav-main-link-name">Product Settings</span>
                                 </a>
                             </li>
