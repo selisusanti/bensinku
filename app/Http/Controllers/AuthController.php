@@ -70,6 +70,10 @@ class AuthController extends Controller
      *
     */
     public function sendEmail(Request $request){
+        // $request->validate([
+        //     'email' => 'required|email'
+        // ]);
+
         $Users = Users::where('email', '=', $request->email)->first();
 
         if(!isset($Users)){
@@ -112,7 +116,7 @@ class AuthController extends Controller
 
 
     public function updatePassword(Request $request) {
-        
+
         try {
 
             DB::beginTransaction();
